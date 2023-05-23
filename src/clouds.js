@@ -1,65 +1,65 @@
-import {math} from './math.js';
-import {voxels} from './voxels.js';
+//DOCUMENTACION MINECRAFT
+		
+		import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.112.1/build/three.module.js';
+		import { WEBGL } from 'https://cdn.jsdelivr.net/npm/three@0.112.1/examples/jsm/WebGL.js';
+		import { graphics } from './graphics.js';
 
+		export const game = (function() {
+		return {
+			Game: class {
+			constructor() {
+				this._Initialize();
+			}
 
-export const clouds = (function() {
+			// Initialize the game
+			_Initialize() {
+				// Create a graphics object and initialize WebGL
+				this._graphics = new graphics.Graphics(this);
+				if (!this._graphics.Initialize()) {
+				// Display an error message if WebGL2 is not available
+				this._DisplayError('WebGL2 is not available.');
+				return;
+				}
 
-  class CloudBlock {
-    constructor(game) {
-      this._game = game;
-      this._mgr = new voxels.InstancedBlocksManager(this._game);
-      this._CreateClouds();
-    }
+				this._previousRAF = null;
 
-    _CreateClouds() {
-      this._cells = {};
+				// Call the _OnInitialize function defined in the child class
+				this._OnInitialize();
 
-      for (let i = 0; i < 25; i++) {
-        const x = Math.floor(math.rand_range(-1000, 1000));
-        const z = Math.floor(math.rand_range(-1000, 1000));
+				// Begin rendering the game
+				this._RAF();
+			}
 
-        const num = math.rand_int(2, 5);
-        for (let j = 0; j < num; j++) {
-          const w = 128;
-          const h = 128;
-          const xi = Math.floor(math.rand_range(-w * 0.75, w * 0.75));
-          const zi = Math.floor(math.rand_range(-h * 0.75, h * 0.75));
+			// Display an error message on the webpage
+			_DisplayError(errorText) {
+				const error = document.getElementById('error');
+				error.innerText = errorText;
+			}
 
-          const xPos = x + xi;
-          const zPos = z + zi;
+			// Request animation frame and render the game
+			_RAF() {
+				requestAnimationFrame((t) => {
+				if (this._previousRAF === null) {
+					this._previousRAF = t;
+				}
+				this._Render(t - this._previousRAF);
+				this._previousRAF = t;
+				});
+			}
 
-          const k = xPos + '.' + zPos;
-          this._cells[k] = {
-            position: [xPos, 200, zPos],
-            type: 'cloud',
-            visible: true
-          }
-        }
-      }
+			// Render the game
+			_Render(timeInMS) {
+				const timeInSeconds = timeInMS * 0.001;
 
-      this._mgr.RebuildFromCellBlock(this._cells);
-    }
-  }
+				// Call the _OnStep function defined in the child class
+				this._OnStep(timeInSeconds);
 
-  class CloudManager {
-    constructor(game) {
-      this._game = game;
-      this._Init();
-    }
+				// Render the graphics using WebGL
+				this._graphics.Render(timeInSeconds);
 
-    _Init() {
-      this._clouds = new CloudBlock(this._game);
-    }
-
-    Update(_) {
-      const cameraPosition = this._game._graphics._camera.position;
-
-      this._clouds._mgr._meshes['cloud'].position.x = cameraPosition.x;
-      this._clouds._mgr._meshes['cloud'].position.z = cameraPosition.z;
-    }
-  }
-
-  return {
-    CloudManager: CloudManager
-  };
-})();
+				// Call _RAF to continue rendering the game
+				this._RAF();
+			}
+			}
+		};
+		})();
